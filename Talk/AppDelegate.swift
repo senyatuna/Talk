@@ -42,6 +42,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         print("firebase token is: \(String(describing: fcmToken))")
+        if let fcmToken = fcmToken {
+            UserDefaults.standard.setValue(fcmToken, forKey: TokenManager.FIREBASE_REGISTERATION_TOKEN)
+        } else {
+            UserDefaults.standard.removeObject(forKey: TokenManager.FIREBASE_REGISTERATION_TOKEN)
+        }
     }
 
     // MARK: UISceneSession Lifecycle

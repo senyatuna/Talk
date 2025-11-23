@@ -14,6 +14,7 @@ import TalkExtensions
 @MainActor
 public final class TokenManager: ObservableObject {
     public static let shared = TokenManager()
+    public static let FIREBASE_REGISTERATION_TOKEN = "FIREBASE_REGISTERATION_TOKEN"
     @Published public var secondToExpire: Double = 0
     @Published public private(set) var isLoggedIn = false // to update login logout ui
     public nonisolated static let ssoTokenKey = "ssoTokenKey"
