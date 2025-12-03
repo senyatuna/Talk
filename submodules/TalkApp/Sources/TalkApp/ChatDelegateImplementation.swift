@@ -138,6 +138,9 @@ public final class ChatDelegateImplementation: ChatDelegate {
             if let user = response.result {
                 UserConfigManagerVM.instance.onUser(user)
                 AppState.shared.setUser(user)
+                Task {
+                    await FirebaseManager.shared.register()
+                }
             }
         default:
             break
