@@ -60,12 +60,17 @@ public final class FirebaseManager: ObservableObject {
         throws -> URLRequest
     {
         let spec = AppState.shared.spec
-        let address = "https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe"
+        /// Sandbox
+        // let address = "https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe"
+        
+        /// Production
+        let address = "https://api.pod.ir/srv/notification/push/device/subscribe"
+        
         let clientId = spec.paths.sso.clientId
         let req = NotificationRegisterationRequest(
             registrationToken: firebaseToken,
             appId: appId,
-            deveiceId: deviceId,
+            deviceId: deviceId,
             ssoId: ssoId,
             packageName: "com.lmlvrmedia.leitnerbox")
         guard let url = URL(string: address)
@@ -108,7 +113,7 @@ public final class FirebaseManager: ObservableObject {
         let registrationToken: String
         let appId: String
         let platform: String
-        let deveiceId: String
+        let deviceId: String
         let ssoId: Int
         let packageName: String
 
@@ -117,7 +122,7 @@ public final class FirebaseManager: ObservableObject {
             registrationToken: String,
             appId: String,
             platform: String = "IOS",
-            deveiceId: String,
+            deviceId: String,
             ssoId: Int,
             packageName: String
         ) {
@@ -125,7 +130,7 @@ public final class FirebaseManager: ObservableObject {
             self.registrationToken = registrationToken
             self.appId = appId
             self.platform = platform
-            self.deveiceId = deveiceId
+            self.deviceId = deviceId
             self.ssoId = ssoId
             self.packageName = packageName
         }

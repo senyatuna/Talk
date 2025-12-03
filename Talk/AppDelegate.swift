@@ -22,12 +22,17 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        /// Notification setup
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        FirebaseApp.configure()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         application.registerForRemoteNotifications()
+
+        /// Firebase setup
+        FirebaseApp.configure()
         Messaging.messaging().delegate = self
+        
+        /// Initi shared instance.
         ChatDelegateImplementation.sharedInstance.initialize()
         ChatDelegateImplementation.sharedInstance.registerOnConnect()
         return true
