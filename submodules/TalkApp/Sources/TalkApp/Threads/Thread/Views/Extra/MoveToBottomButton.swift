@@ -52,7 +52,7 @@ public final class MoveToBottomButton: UIButton {
 
         lblUnreadCount.translatesAutoresizingMaskIntoConstraints = false
         lblUnreadCount.label.textColor = Color.App.whiteUIColor
-        lblUnreadCount.label.font = .fBoldCaption
+        lblUnreadCount.label.font = UIFont.bold(.caption)
         lblUnreadCount.layer.backgroundColor = Color.App.accentUIColor?.cgColor
         lblUnreadCount.layer.cornerRadius = 12
         lblUnreadCount.label.textAlignment = .center
@@ -86,8 +86,7 @@ public final class MoveToBottomButton: UIButton {
     }
 
     public func updateUnreadCount() {
-        let isArchive = viewModel?.thread.isArchive == true
-        let threads = isArchive ? AppState.shared.objectsContainer.archivesVM.archives : AppState.shared.objectsContainer.threadsVM.threads ?? []
+        let threads = AppState.shared.objectsContainer.navVM.allThreads
         let thread = threads.first(where: {$0.id == viewModel?.id})
         let unreadCount = thread?.unreadCount ?? 0
         

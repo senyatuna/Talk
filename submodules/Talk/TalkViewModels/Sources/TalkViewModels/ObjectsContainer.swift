@@ -20,7 +20,7 @@ public final class ObjectsContainer: ObservableObject {
     @Published public var messagePlayer = AVAudioPlayerViewModel()
     @Published public var appOverlayVM = AppOverlayViewModel()
     @Published public var searchVM = ThreadsSearchViewModel()
-    @Published public var archivesVM = ArchiveThreadsViewModel()
+    @Published public var archivesVM = ThreadsViewModel(isArchive: true)
     @Published public var errorVM = ErrorHandlerViewModel()
     @Published public var banVM = BanViewModel()
     @Published public var userProfileImageVM: ImageLoaderViewModel!
@@ -66,6 +66,8 @@ public final class ObjectsContainer: ObservableObject {
         appOverlayVM.clear()
         conversationBuilderVM.clear()
         userProfileImageVM.clear()
+        UserDefaults.standard.removeObject(forKey: "SELF_THREAD")
+        UserDefaults.standard.synchronize()
     }
 
     private func onMessageEvent(_ event: MessageEventTypes) async {

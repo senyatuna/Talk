@@ -136,7 +136,7 @@ public extension MessageRowViewModel {
         }
     }
 
-    private func shareFile(sourceView: UIView? = nil) {
+    public func shareFile(sourceView: UIView? = nil) {
         Task { [weak self] in
             guard let self = self else { return }
             _ = await message.makeTempURL()
@@ -189,11 +189,6 @@ public extension MessageRowViewModel {
     func clearReactions() {
         isInvalid = false
         reactionsModel = .init(messageId: message.id ?? -1)
-    }
-
-    func setReaction(reactions: ReactionCountList) {
-        isInvalid = false
-        self.reactionsModel = MessageRowCalculators.calulateReactions(reactions, message.id ?? -1)
     }
     
     func setReactionRowsModel(model: ReactionRowsCalculated) {
