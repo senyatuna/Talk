@@ -35,7 +35,7 @@ public final class FirebaseManager: ObservableObject {
         do {
             let urlReq = try makeRegistrationRequest(apiToken: ssoToken.accessToken ?? "",
                                                      firebaseToken: firebaseToken,
-                                                     appId: "PodChat",
+                                                     appId: "720e60cf-3025-48cc-94fa-ab934d4baa0c",
                                                      deviceId: deviceId,
                                                      ssoId: ssoId)
             let resp = try await session.data(for: urlReq)
