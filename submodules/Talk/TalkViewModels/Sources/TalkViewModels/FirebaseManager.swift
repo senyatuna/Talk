@@ -61,10 +61,10 @@ public final class FirebaseManager: ObservableObject {
     {
         let spec = AppState.shared.spec
         /// Sandbox
-        // let address = "https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe"
+         let address = "https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe"
         
         /// Production
-        let address = "https://api.pod.ir/srv/notification/push/device/subscribe"
+//        let address = "https://api.pod.ir/srv/notification/push/device/subscribe"
         
         let clientId = spec.paths.sso.clientId
         let req = NotificationRegisterationRequest(
