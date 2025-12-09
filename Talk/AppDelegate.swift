@@ -20,6 +20,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     class var shared: AppDelegate! {
         UIApplication.shared.delegate as? AppDelegate
     }
+    
+    let gcmMessageIDKey = "gcm.message_id"
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         /// Notification setup
@@ -38,15 +40,79 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         return true
     }
     
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) { }
+    @MainActor
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any]) async -> UIBackgroundFetchResult {
+        // If you are receiving a notification message while your app is in the background,
+        // this callback will not be fired till the user taps on the notification launching the application.
+        // TODO: Handle data of notification
+        
+        // With swizzling disabled you must let Messaging know about the message, for Analytics
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        
+        // Print message ID.
+        if let messageID = userInfo[gcmMessageIDKey] {
+            print("Message ID: \(messageID)")
+        }
+        
+        // Print full message.
+        print(userInfo)
+        print("Call exportDeliveryMetricsToBigQuery() from AppDelegate")
+        Messaging.serviceExtension().exportDeliveryMetricsToBigQuery(withMessageInfo: userInfo)
+        return UIBackgroundFetchResult.newData
+    }
     
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let token = tokenParts.joined()
+        print("APNs token retrieved: \(token)")
+        // With swizzling disabled you must set the APNs token here.
+        Messaging.messaging().apnsToken = deviceToken
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        let userInfo = notification.request.content.userInfo
+        
+        // With swizzling disabled you must let Messaging know about the message, for Analytics
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        
+        // [START_EXCLUDE]
+        // Print message ID.
+        if let messageID = userInfo[gcmMessageIDKey] {
+            print("Message ID: \(messageID)")
+        }
+        // [END_EXCLUDE]∫
+        
+        // Print full message.
+        print(userInfo)
+        
+        // Change this to your preferred presentation option
+        // Note: UNNotificationPresentationOptions.alert has been deprecated.
+        if #available(iOS 14.0, *) {
+            return [.list, .banner, .sound]
+        } else {
+            return [.alert, .sound]
+        }
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let message = "did receive notification: \(response.notification.request.content)"
         print(message)
         AppState.shared.objectsContainer.appOverlayVM.toast(leadingView: nil, message: message, messageColor: .red)
+        
+        let userInfo = response.notification.request.content.userInfo
+        
+        // [START_EXCLUDE]
+        // Print message ID.
+        if let messageID = userInfo[gcmMessageIDKey] {
+            print("Message ID: \(messageID)")
+        }
+        // [END_EXCLUDE]
+        
+        // With swizzling disabled you must let Messaging know about the message, for Analytics
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        
+        // Print full message.
+        print(userInfo)
     }
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
