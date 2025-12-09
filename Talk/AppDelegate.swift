@@ -44,10 +44,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let message = "did receive notification: \(response.notification.request.content)"
+        print(message)
+        AppState.shared.objectsContainer.appOverlayVM.toast(leadingView: nil, message: message, messageColor: .red)
     }
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("firebase token is: \(String(describing: fcmToken))")
         FirebaseManager.setFirebaseToken(token: fcmToken)
     }
 

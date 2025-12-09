@@ -38,12 +38,18 @@ public final class FirebaseManager: ObservableObject {
                                                      appId: "720e60cf-3025-48cc-94fa-ab934d4baa0c",
                                                      deviceId: deviceId,
                                                      ssoId: ssoId)
-            let resp = try await session.data(for: urlReq)
-            FirebaseManager.setNotificationRegistrationResult(value: true)
-            let log = Logger.makeLog(prefix: "TALK_REGISTER_TOKEN:", request: urlReq, response: resp)
+            let (data, resp) = try await session.data(for: urlReq)
+            if let httpResponse = resp as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                let decodedResponse = try JSONDecoder.instance.decode(NotificationRegisterResponse.self, from: data)
+                FirebaseManager.setNotificationRegistrationResult(value: true)
+                log("Successfully registered with ssoId: \(ssoId)")
+            } else {
+                log("Failed to register with ssoId: \(ssoId)")
+            }
+            let log = Logger.makeLog(prefix: "TALK_REGISTER_TOKEN:", request: urlReq, response: (data, resp))
             self.log(log)
         } catch {
-            log("Error on registering firebase token wiht the notification server")
+            log("Error on registering firebase token wiht the notification server with error: \(error.localizedDescription)")
         }
     }
     
@@ -102,37 +108,14 @@ public final class FirebaseManager: ObservableObject {
             UserDefaults.standard.removeObject(
                 forKey: FIREBASE_REGISTERATION_TOKEN)
         }
+        log("Firebase token is: \(token ?? "")")
     }
-
-    private func log(_ message: String) {
+    
+    private static func log(_ message: String) {
         Logger.log(title: "FirebaseManager", message: message)
     }
-
-    public struct NotificationRegisterationRequest: Codable {
-        let isSubscriptionRequest: Bool
-        let registrationToken: String
-        let appId: String
-        let platform: String
-        let deviceId: String
-        let ssoId: Int
-        let packageName: String
-
-        public init(
-            isSubscriptionRequest: Bool = true,
-            registrationToken: String,
-            appId: String,
-            platform: String = "IOS",
-            deviceId: String,
-            ssoId: Int,
-            packageName: String
-        ) {
-            self.isSubscriptionRequest = isSubscriptionRequest
-            self.registrationToken = registrationToken
-            self.appId = appId
-            self.platform = platform
-            self.deviceId = deviceId
-            self.ssoId = ssoId
-            self.packageName = packageName
-        }
+    
+    private func log(_ message: String) {
+        FirebaseManager.log(message)
     }
 }
