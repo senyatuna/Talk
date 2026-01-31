@@ -31,11 +31,11 @@ public final class FirebaseManager: ObservableObject {
             let deviceId = await getAsyncConfig(),
             let ssoId = Int(ssoIdString)
         else { return }
-        
+        log("Send firebase token: \(firebaseToken)")
         do {
             let urlReq = try makeRegistrationRequest(apiToken: ssoToken.accessToken ?? "",
                                                      firebaseToken: firebaseToken,
-                                                     appId: "720e60cf-3025-48cc-94fa-ab934d4baa0c",
+                                                     appId: "1bec808b-4e60-47bd-8f3f-8f000478aca4",
                                                      deviceId: deviceId,
                                                      ssoId: ssoId)
             let (data, resp) = try await session.data(for: urlReq)
@@ -44,7 +44,8 @@ public final class FirebaseManager: ObservableObject {
                 FirebaseManager.setNotificationRegistrationResult(value: true)
                 log("Successfully registered with ssoId: \(ssoId)")
             } else {
-                log("Failed to register with ssoId: \(ssoId)")
+                let stringBody = String(data: data, encoding: .utf8)
+                log("Failed to register with ssoId: \(ssoId) stringBody: \(stringBody)")
             }
             let log = Logger.makeLog(prefix: "TALK_REGISTER_TOKEN:", request: urlReq, response: (data, resp))
             self.log(log)

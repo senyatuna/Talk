@@ -73,24 +73,44 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         let userInfo = notification.request.content.userInfo
         
         // With swizzling disabled you must let Messaging know about the message, for Analytics
-        Messaging.messaging().appDidReceiveMessage(userInfo)
+        let dict: [String: Any] = Dictionary(
+            uniqueKeysWithValues: userInfo.compactMap { key, value in
+                guard let stringKey = key as? String else { return nil }
+                return (stringKey, value)
+            }
+        )
         
-        // [START_EXCLUDE]
-        // Print message ID.
-        if let messageID = userInfo[gcmMessageIDKey] {
-            print("Message ID: \(messageID)")
-        }
-        // [END_EXCLUDE]∫
-        
-        // Print full message.
-        print(userInfo)
-        
-        // Change this to your preferred presentation option
-        // Note: UNNotificationPresentationOptions.alert has been deprecated.
-        if #available(iOS 14.0, *) {
-            return [.list, .banner, .sound]
-        } else {
-            return [.alert, .sound]
+        do {
+            let data = try JSONSerialization.data(withJSONObject: dict, options: [])
+            let payload = try JSONDecoder.instance.decode(NotificationPayload.self, from: data)
+            
+            if payload.requestType == .reaction {
+                /// reject showing a notification if it is a reaction notification for the time being.
+                return []
+            }
+            
+            Messaging.messaging().appDidReceiveMessage(userInfo)
+            
+            // [START_EXCLUDE]
+            // Print message ID.
+            if let messageID = userInfo[gcmMessageIDKey] {
+                print("Message ID: \(messageID)")
+            }
+            // [END_EXCLUDE]∫
+            
+            // Print full message.
+            print(userInfo)
+            
+            // Change this to your preferred presentation option
+            // Note: UNNotificationPresentationOptions.alert has been deprecated.
+            if #available(iOS 14.0, *) {
+                return [.list, .banner, .sound]
+            } else {
+                return [.alert, .sound]
+            }
+        } catch {
+            print("Error in decoding and presenting the notification: ", error)
+            return []
         }
     }
     
