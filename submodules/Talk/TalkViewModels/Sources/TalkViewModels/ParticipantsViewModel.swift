@@ -11,6 +11,26 @@ import Foundation
 import SwiftUI
 import TalkModels
 
+public enum MemberItem: Hashable, Sendable {
+    case searchTextFields
+    case addParticipantButton
+    case item(participnat: Participant, image: UIImage?)
+    case noResult
+}
+
+public enum MembersListSection: Int, Sendable {
+    case searchTextFields = 0
+    case addParticipantButton = 1
+    case rows = 2
+    case noResult = 3
+}
+
+@MainActor
+public protocol UIMembersViewControllerDelegate: AnyObject {
+    func apply(snapshot: NSDiffableDataSourceSnapshot<MembersListSection, MemberItem>, animatingDifferences: Bool)
+    func updateImage(image: UIImage?, id: Int)
+}
+
 @MainActor
 public final class ParticipantsViewModel: ObservableObject {
     private weak var viewModel: ThreadViewModel?
@@ -28,15 +48,66 @@ public final class ParticipantsViewModel: ObservableObject {
     private let LOAD_KEY: String
     private let SEARCH_KEY: String
     private let ADMIN_KEY: String
+    public weak var delegate: UIMembersViewControllerDelegate?
+    private var avatarViewModels: [Int: UIImage?] = [:]
+    
+    public var isInSearch: Bool { !searchText.isEmpty }
+    public var list: [Participant] { isInSearch ? searchedParticipants : participants }
 
     public init() {
         LOAD_KEY = "LOAD-PARTICIPANTS-\(objectId)"
         SEARCH_KEY = "SEARCH-PARTICIPANTS-\(objectId)"
         ADMIN_KEY = "REQUEST-TO-ADMIN-PARTICIPANT-\(objectId)"
     }
+    
+    func updateUI(animation: Bool, reloadSections: Bool) {
+        let snapshot = makeSnapshot(reloadSections: reloadSections)
+        
+        /// Apply
+        delegate?.apply(snapshot: snapshot, animatingDifferences: animation)
+    }
+    
+    public func makeSnapshot(reloadSections: Bool) -> NSDiffableDataSourceSnapshot<MembersListSection, MemberItem> {
+        /// Create
+        var snapshot = NSDiffableDataSourceSnapshot<MembersListSection, MemberItem>()
+        
+        /// Configure Search section
+        snapshot.appendSections([.searchTextFields])
+        snapshot.appendItems([.searchTextFields], toSection: .searchTextFields)
+        
+        /// Configure add participant section
+        if thread?.admin == true && thread?.group == true {
+            snapshot.appendSections([.addParticipantButton])
+            snapshot.appendItems([.addParticipantButton], toSection: .addParticipantButton)
+        }
+        
+        /// Configure members row section
+        snapshot.appendSections([.rows])
+        snapshot.appendItems(list.compactMap({ .item(participnat: $0, image: image(for: $0.id ?? -1)) }), toSection: .rows)
+        if reloadSections {
+            snapshot.reloadSections([.rows])
+        }
+        
+        /// Configure no result section
+        if searchedParticipants.isEmpty && !searchText.isEmpty {
+            snapshot.appendSections([.noResult])
+            snapshot.appendItems([.noResult], toSection: .noResult)
+        }
+        
+        return snapshot
+    }
+    
+    private func image(for id: Int) -> UIImage? {
+        guard let image = avatarViewModels[id] else { return nil }
+        return image
+    }
 
     public func setup(viewModel: ThreadViewModel) {
         self.viewModel = viewModel
+        registerObservers()
+    }
+    
+    private func registerObservers() {
         NotificationCenter.participant.publisher(for: .participant)
             .compactMap { $0.object as? ParticipantEventTypes }
             .sink { [weak self] event in
@@ -66,12 +137,12 @@ public final class ParticipantsViewModel: ObservableObject {
                         await self?.searchParticipants(searchText.lowercased())
                     } else {
                         self?.searchedParticipants.removeAll()
+                        self?.updateUI(animation: false, reloadSections: false)
                     }
                 }
             }
             .store(in: &cancelable)
     }
-
 
     private func onParticipantEvent(_ event: ParticipantEventTypes) {
         switch event {
@@ -82,6 +153,7 @@ public final class ParticipantsViewModel: ObservableObject {
             }
         case .deleted(let chatResponse):
             onDelete(chatResponse)
+            updateUI(animation: true, reloadSections: false)
         case .setAdminRoleToUser(let response):
             onSetAdminRole(response)
         case .removeAdminRoleFromUser(let response):
@@ -116,7 +188,8 @@ public final class ParticipantsViewModel: ObservableObject {
     public func onAdded(_ participants: [Participant]) {
         withAnimation { [weak self] in
             self?.participants.insert(contentsOf: participants, at: 0)
-            self?.animateObjectWillChange()
+            self?.sort()
+            self?.updateUI(animation: true, reloadSections: false)
         }
     }
 
@@ -124,7 +197,7 @@ public final class ParticipantsViewModel: ObservableObject {
         if lastRequestTime + 0.5 > .now {
             timerRequestQueue?.invalidate()
             timerRequestQueue = nil
-            timerRequestQueue = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            timerRequestQueue = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
                 Task { [weak self] in
                     await self?.loadByTimerQueue()
                 }
@@ -169,8 +242,8 @@ public final class ParticipantsViewModel: ObservableObject {
         }
     }
 
-    public var sorted: [Participant] {
-        participants.sorted(by: { ($0.auditor ?? false && !($1.auditor ?? false)) || (($0.admin ?? false) && !($1.admin ?? false)) })
+    public func sort() {
+        participants = participants.sorted(by: { ($0.auditor ?? false && !($1.auditor ?? false)) || (($0.admin ?? false) && !($1.admin ?? false)) })
     }
 
     public func loadMore() async {
@@ -187,6 +260,10 @@ public final class ParticipantsViewModel: ObservableObject {
             firstSuccessResponse = true
             appendParticipants(participants: participants)
             lazyList.setHasNext(response.hasNext)
+            updateUI(animation: false, reloadSections: false)
+            for participant in participants {
+                addImageLoader(participant)
+            }
         }
         lazyList.setLoading(false)
     }
@@ -195,6 +272,10 @@ public final class ParticipantsViewModel: ObservableObject {
         if !response.cache, response.pop(prepend: SEARCH_KEY) != nil, let participants = response.result {
             searchedParticipants.removeAll()
             searchedParticipants.append(contentsOf: participants)
+            updateUI(animation: false, reloadSections: false)
+            for participant in participants {
+                addImageLoader(participant)
+            }
         }
         lazyList.setLoading(false)
     }
@@ -234,6 +315,7 @@ public final class ParticipantsViewModel: ObservableObject {
         // remove older data to prevent duplicate on view
         self.participants.removeAll(where: { participant in participants.contains(where: { participant.id == $0.id }) })
         self.participants.append(contentsOf: participants)
+        self.sort()
     }
 
     public func onRemoveRoles(_ response: ChatResponse<[UserRole]>) {
@@ -244,8 +326,9 @@ public final class ParticipantsViewModel: ObservableObject {
                userRole.isAdminRolesChanged
             {
                 participants[index].admin = false
+                sort()
             }
-            animateObjectWillChange()
+            updateUI(animation: true, reloadSections: false)
         }
     }
 
@@ -257,7 +340,8 @@ public final class ParticipantsViewModel: ObservableObject {
                userRole.isAdminRolesChanged
             {
                 participants[index].admin = true
-                animateObjectWillChange()
+                sort()
+                updateUI(animation: true, reloadSections: false)
             }
         }
 
@@ -266,7 +350,8 @@ public final class ParticipantsViewModel: ObservableObject {
             response.result?.forEach{ userRole in
                 if let index = participants.firstIndex(where: {$0.id == userRole.id}) {
                     participants[index].admin = true
-                    animateObjectWillChange()
+                    sort()
+                    updateUI(animation: true, reloadSections: false)
                 }
             }
         }
@@ -276,7 +361,8 @@ public final class ParticipantsViewModel: ObservableObject {
         response.result?.forEach{ adminRole in
             if adminRole.hasError == nil, adminRole.hasError == false, let index = participants.firstIndex(where: {$0.id == adminRole.participant?.id}) {
                 participants[index].admin = true
-                animateObjectWillChange()
+                sort()
+                updateUI(animation: true, reloadSections: false)
             }
         }
     }
@@ -285,7 +371,8 @@ public final class ParticipantsViewModel: ObservableObject {
         response.result?.forEach{ adminRole in
             if adminRole.hasError == nil, adminRole.hasError == false, let index = participants.firstIndex(where: {$0.id == adminRole.participant?.id}) {
                 participants[index].admin = false
-                animateObjectWillChange()
+                sort()
+                updateUI(animation: true, reloadSections: false)
             }
         }
     }
@@ -304,6 +391,23 @@ public final class ParticipantsViewModel: ObservableObject {
     public func cancelAllObservers() {
         cancelable.forEach { cancelable in
             cancelable.cancel()
+        }
+    }
+    
+    public func addImageLoader(_ participant: Participant) {
+        guard let id = participant.id else { return }
+        if avatarViewModels[id] == nil {
+            let viewModel = ImageLoaderViewModel(participant: participant)
+            avatarViewModels[id] = nil
+            viewModel.onImage = { [weak self] image in
+                Task { @MainActor [weak self] in
+                    self?.avatarViewModels[id] = image
+                    self?.delegate?.updateImage(image: image, id: id)
+                }
+            }
+            viewModel.fetch()
+        } else if let image = avatarViewModels[id] {
+            delegate?.updateImage(image: image, id: id)
         }
     }
 

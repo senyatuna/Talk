@@ -17,10 +17,14 @@ import Chat
 @MainActor
 public class ParticipantsCountManager {
     public var cancelable: Set<AnyCancellable> = []
-    private var threadsVM: ThreadsViewModel { AppState.shared.objectsContainer.threadsVM }
-    private var archivesVM: ThreadsViewModel { AppState.shared.objectsContainer.archivesVM }
+    private var appState: AppState { AppState.shared }
+    private var navVM: NavigationModel { appState.objectsContainer.navVM }
+    private var threadsVM: ThreadsViewModel { appState.objectsContainer.threadsVM }
+    private var archivesVM: ThreadsViewModel { appState.objectsContainer.archivesVM }
+    private let isArchive: Bool
 
-    init() {
+    init(isArchive: Bool) {
+        self.isArchive = isArchive
         NotificationCenter.thread.publisher(for: .thread)
             .compactMap { $0.object as? ThreadEventTypes }
             .sink { [weak self] event in
@@ -78,27 +82,27 @@ public class ParticipantsCountManager {
     }
     
     private func updateNonArchivesVMCount(count: Int, threadId: Int) {
-        if let index = threadsVM.threads.firstIndex(where: {$0.id == threadId}) {
+        if let index = threadsVM.threads.firstIndex(where: {$0.id == threadId}), !isArchive {
             threadsVM.threads[index].participantCount = count
             let vm = threadViewModel(threadId: threadId)
             vm?.setParticipantsCount(count)
             vm?.conversationSubtitle.updateSubtitle()
-            AppState.shared.objectsContainer.navVM.detailViewModel(threadId: threadId)?.animateObjectWillChange()
+            navVM.detailViewModel(threadId: threadId)?.animateObjectWillChange()
         }
     }
     
     private func updateArchivesVMCount(count: Int, threadId: Int) {
-        if let index = archivesVM.threads.firstIndex(where: {$0.id == threadId}) {
+        if let index = archivesVM.threads.firstIndex(where: {$0.id == threadId}), isArchive {
             archivesVM.threads[index].participantCount = count
             let vm = threadViewModel(threadId: threadId)
             vm?.setParticipantsCount(count)
             vm?.conversationSubtitle.updateSubtitle()
-            AppState.shared.objectsContainer.navVM.detailViewModel(threadId: threadId)?.animateObjectWillChange()
+            navVM.detailViewModel(threadId: threadId)?.animateObjectWillChange()
         }
     }
     
     private func threadViewModel(threadId: Int) -> ThreadViewModel? {
-        AppState.shared.objectsContainer.navVM.viewModel(for: threadId)
+        navVM.viewModel(for: threadId)
     }
 
     private func currentCount(threadId: Int?) -> Int {

@@ -16,7 +16,7 @@ import Chat
 public class CustomConversationNavigationBar: UIView {
     /// Views
     private let backButton = UIImageButton(imagePadding: .init(all: 14))
-    private let searchButton = UIImageButton(imagePadding: .init(all: 10))
+    private let searchButton = UIImageButton(imagePadding: .init(all: 12))
     private let fullScreenButton = UIImageButton(imagePadding: .init(all: 6))
     private let titleLabel = UILabel()
     private let detailViewButton: UIView = UIView()
@@ -239,7 +239,7 @@ public class CustomConversationNavigationBar: UIView {
         
         let detailViewModel = ThreadDetailViewModel()
         detailViewModel.setup(threadVM: viewModel)
-        let detailVC = UIHostingController(rootView: DetailViewWrapper(detailViewModel: detailViewModel).injectAllObjects())
+        let detailVC = UIDetailViewController(viewModel: detailViewModel)
         let navigationController = (viewModel.delegate as? ThreadViewController)?.navigationController
         
         AppState.shared.objectsContainer.navVM.appendThreadDetailUIKit(vc: detailVC,

@@ -25,40 +25,51 @@ public final class ChatDelegateImplementation: ChatDelegate {
     
     public func initialize() {
         let manager = BundleManager.init()
-        if let spec = Spec.cachedSpec(), manager.hasBundle {
-            if let language = Language.languages.first(where: {$0.language == Locale.preferredLanguages[0] }) {
-                Language.setLanguageTo(bundle: manager.getBundle(), language: language)
-            }
-            setup(spec: spec, bundle: manager.getBundle())
-            Task { [weak self] in
-                guard let self = self else { return }
-                do {
-                    let updated = try await manager.shouldUpdate()
-                    if updated {
-                        reload(spec: spec, bundle: manager.getBundle(), recreateChatObject: false)
-                    }
-                } catch {
-                    print(error)
-                }
-            }
-        } else {
-            /// Download Spec and Bundle
-            Task { [weak self] in
-                guard let self = self else { return }
+        let specManager = SpecManagerViewModel.shared
+        let cachedSpec = specManager.cachedSpec()
+        if let cachedSpec = cachedSpec, manager.hasBundle {
+            setLanguage(bundle: manager.getBundle())
+            setup(spec: cachedSpec, bundle: manager.getBundle())
+        }
+        Task {
+            if let cachedSpec = cachedSpec {
+                await updateBundleIfNeeded(manager, spec: cachedSpec)
+            } else {
                 await dlReload(manager: manager)
             }
+            
+            await SpecManagerViewModel.shared.fetchConfigsReconnectIfSocketHasChanged()
+        }
+    }
+    
+    private func setLanguage(bundle: Bundle) {
+        if let language = Language.languages.first(where: {$0.language == Locale.preferredLanguages[0] }) {
+            Language.setLanguageTo(bundle: bundle, language: language)
+        }
+    }
+    
+    private func updateBundleIfNeeded(_ manager: BundleManager, spec: Spec) async {
+        do {
+            let updated = try await manager.shouldUpdate()
+            if updated {
+                reload(spec: spec, bundle: manager.getBundle(), recreateChatObject: false)
+            }
+        } catch {
+            print(error)
         }
     }
     
     private func dlReload(manager: BundleManager) async {
         do {
             isDownloading = true
-            let spec = try await Spec.dl()
+            let specManager = SpecManagerViewModel.shared
+            let spec = try await specManager.download()
             _ = try await manager.st()
             reload(spec: spec, bundle: manager.getBundle())
             isDownloading = false
             networkObserver = nil
         } catch {
+            log("Error on download spec or bundle: \n\(error.localizedDescription)")
             isDownloading = false
             // Failed to download spec or bundle
             if retryCount < 3 {
@@ -77,7 +88,7 @@ public final class ChatDelegateImplementation: ChatDelegate {
     }
     
     private func setup(spec: Spec, bundle: Bundle, recreateChatObject: Bool = true) {
-        AppState.shared.spec = spec
+        AppState.shared.setSpec(spec)
         UIFont.register(bundle: bundle)
         // Override point for customization after application launch.
         if recreateChatObject {
@@ -107,6 +118,9 @@ public final class ChatDelegateImplementation: ChatDelegate {
                 case .closed:
                     self.log("🔴 chat Disconnect")
                     AppState.shared.connectionStatus = .disconnected
+                    Task {
+                        await SpecManagerViewModel.shared.fetchConfigsReconnectIfSocketHasChanged()
+                    }
                 case .asyncReady:
                     self.log("🟡 Async ready")
                 case .chatReady:
@@ -114,7 +128,7 @@ public final class ChatDelegateImplementation: ChatDelegate {
                     /// Clear old requests in queue when reconnect again
                     RequestsManager.shared.clear()
                     AppState.shared.objectsContainer.chatRequestQueue.cancellAll()
-                    AppState.shared.connectionStatus = .connected                    
+                    AppState.shared.connectionStatus = .connected
                 case .uninitialized:
                     self.log("Chat object is not initialized.")
                 }
@@ -233,7 +247,8 @@ public final class ChatDelegateImplementation: ChatDelegate {
         networkObserver?.onNetworkChange = { [weak self] isConnected in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                if isConnected, !self.isDownloading, Spec.cachedSpec() == nil {
+                let specManager = AppState.shared.objectsContainer.specManager
+                if isConnected, !self.isDownloading, specManager.cachedSpec() == nil {
                     self.initialize()
                 }
             }
@@ -241,6 +256,6 @@ public final class ChatDelegateImplementation: ChatDelegate {
     }
 
     private func log(_ string: String) {
-        Logger.log(title: "ChatDelegateImplementation.onLog", message: string)
+        Logger.log(title: "ChatDelegateImplementation", message: string)
     }
 }

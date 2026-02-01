@@ -15,8 +15,8 @@ class NotificationService: UNNotificationServiceExtension {
 
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
-        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
-        bestAttemptContent?.title = "tamptered"
+//        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+//        bestAttemptContent?.title = "tamptered"
         contentHandler(bestAttemptContent!)
         
         os_log("🔥🔥 Notification Service Extension DID RECEIVE")
@@ -26,9 +26,12 @@ class NotificationService: UNNotificationServiceExtension {
             /// Do nothing if the requestType is reaction type,
             /// so we do not need to call contentHandler callback,
             /// therefore there will be no notification even in background.
+            contentHandler(UNMutableNotificationContent())
             return
+        } else {
+            contentHandler(request.content)
         }
-//        
+//
 //        guard let bestAttemptContent = bestAttemptContent else {
 //            /// Default content handling
 //            contentHandler(request.content)

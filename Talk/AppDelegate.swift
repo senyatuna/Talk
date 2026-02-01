@@ -33,8 +33,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         /// Firebase setup
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in}
         
-        /// Initi shared instance.
+        let forceLeitner = UserDefaults.standard.bool(forKey: SceneDelegate.L_FORCE)
+        if forceLeitner { return true }
         ChatDelegateImplementation.sharedInstance.initialize()
         ChatDelegateImplementation.sharedInstance.registerOnConnect()
         return true
