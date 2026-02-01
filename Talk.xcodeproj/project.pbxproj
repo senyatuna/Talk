@@ -59,6 +59,8 @@
 		ACDC0A162EAF5E830094A423 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = ACDC0A132EAF5E830094A423 /* GoogleService-Info.plist */; };
 		ACF538602DF42AC300D6C9A3 /* Logger+.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF5385F2DF42AC300D6C9A3 /* Logger+.swift */; };
 		ACF538612DF42AC300D6C9A3 /* Logger+.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF5385F2DF42AC300D6C9A3 /* Logger+.swift */; };
+		AE615A492F2F8A1E0040BA4A /* ChatModels in Frameworks */ = {isa = PBXBuildFile; productRef = AE615A482F2F8A1E0040BA4A /* ChatModels */; };
+		AE615A4C2F2F8A660040BA4A /* TalkExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = AE615A4B2F2F8A660040BA4A /* TalkExtensions */; };
 		AEE1E50D2F0E5B6600B898E7 /* NotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AE9C2CA82F0B849400CABDB6 /* NotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -211,6 +213,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE615A4C2F2F8A660040BA4A /* TalkExtensions in Frameworks */,
+				AE615A492F2F8A1E0040BA4A /* ChatModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -402,6 +406,8 @@
 			);
 			name = NotificationService;
 			packageProductDependencies = (
+				AE615A482F2F8A1E0040BA4A /* ChatModels */,
+				AE615A4B2F2F8A660040BA4A /* TalkExtensions */,
 			);
 			productName = NotificationService;
 			productReference = AE9C2CA82F0B849400CABDB6 /* NotificationService.appex */;
@@ -450,6 +456,8 @@
 				AC7408912D777A76009217C8 /* XCLocalSwiftPackageReference "submodules/TalkApp" */,
 				ACE77E862E1C2BBA00450E13 /* XCLocalSwiftPackageReference "submodules/LeitnerBox" */,
 				ACDC0A062EAF5C000094A423 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				AE615A472F2F89B00040BA4A /* XCLocalSwiftPackageReference "submodules/SDK/Chat/submodules/ChatModels" */,
+				AE615A4A2F2F8A600040BA4A /* XCLocalSwiftPackageReference "../submodules/submodules/Talk/TalkExtensions" */,
 			);
 			productRefGroup = 0570CB182AAEE02A001832E9 /* Products */;
 			projectDirPath = "";
@@ -1206,6 +1214,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = submodules/LeitnerBox;
 		};
+		AE615A472F2F89B00040BA4A /* XCLocalSwiftPackageReference "submodules/SDK/Chat/submodules/ChatModels" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = submodules/SDK/Chat/submodules/ChatModels;
+		};
+		AE615A4A2F2F8A600040BA4A /* XCLocalSwiftPackageReference "../submodules/submodules/Talk/TalkExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../submodules/submodules/Talk/TalkExtensions;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1289,6 +1305,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = ACDC0A062EAF5C000094A423 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		AE615A482F2F8A1E0040BA4A /* ChatModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE615A472F2F89B00040BA4A /* XCLocalSwiftPackageReference "submodules/SDK/Chat/submodules/ChatModels" */;
+			productName = ChatModels;
+		};
+		AE615A4B2F2F8A660040BA4A /* TalkExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE615A4A2F2F8A600040BA4A /* XCLocalSwiftPackageReference "../submodules/submodules/Talk/TalkExtensions" */;
+			productName = TalkExtensions;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

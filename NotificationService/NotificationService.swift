@@ -7,48 +7,50 @@
 
 import UserNotifications
 import os.log
+import ChatModels
+import TalkExtensions
 
 class NotificationService: UNNotificationServiceExtension {
 
     var contentHandler: ((UNNotificationContent) -> Void)?
-    var bestAttemptContent: UNMutableNotificationContent?
+    var request: UNNotificationRequest?
 
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
-//        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
-//        bestAttemptContent?.title = "tamptered"
-        contentHandler(bestAttemptContent!)
-        
-        os_log("🔥🔥 Notification Service Extension DID RECEIVE")
-
-        let userInfo = request.content.userInfo
-        if let requestType = userInfo["requestType"] as? String, requestType != "sendMessage" {
-            /// Do nothing if the requestType is reaction type,
-            /// so we do not need to call contentHandler callback,
-            /// therefore there will be no notification even in background.
-            contentHandler(UNMutableNotificationContent())
-            return
+        self.request = request
+                
+        let type = request.content.userInfo["requestType"] as? String ?? ""
+        if type == "reaction" {
+            handleReaction()
         } else {
             contentHandler(request.content)
         }
-//
-//        guard let bestAttemptContent = bestAttemptContent else {
-//            /// Default content handling
-//            contentHandler(request.content)
-//            return
-//        }
-//      
-//
-//        /// Normal notification
-//        contentHandler(bestAttemptContent)
+    }
+    
+    private func handleReaction() {
+        
+        let mutableContent = request?.content.mutableCopy() as? UNMutableNotificationContent
+        guard
+            let userInfo = request?.content.userInfo,
+            let stickerValue = userInfo["sticker"] as? String,
+            let stickerInt = Int(stickerValue),
+            let content = mutableContent
+        else { return }
+        
+        let emoji = Sticker(rawValue: stickerInt)?.emoji
+        content.title = "Reaction"
+        let doer = userInfo["title"] as? String ?? "Someone"
+        content.body = "\(doer) has reacted to a message with \(emoji ?? "")"
+        content.subtitle = ""
+        content.sound = nil
+        contentHandler?(content)
     }
     
     override func serviceExtensionTimeWillExpire() {
         // Called just before the extension will be terminated by the system.
         // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
-        if let contentHandler = contentHandler, let bestAttemptContent =  bestAttemptContent {
-            contentHandler(bestAttemptContent)
+        if let contentHandler = contentHandler, let content = request?.content {
+            contentHandler(content)
         }
     }
-
 }
