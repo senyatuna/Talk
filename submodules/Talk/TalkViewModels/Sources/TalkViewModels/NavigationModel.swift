@@ -2,6 +2,7 @@ import Chat
 import SwiftUI
 import TalkModels
 import SafariServices
+import Combine
 
 @MainActor
 public final class NavigationModel: ObservableObject {
@@ -15,6 +16,7 @@ public final class NavigationModel: ObservableObject {
     var detailsStack: [ThreadDetailViewModel] = []
     public private(set) var navigationProperties: NavigationProperties = .init()
     public var twoRowTappedAtSameTime = false
+    private var cancellableSet: Set<AnyCancellable> = Set()
     
     /// Once we navigate to a view with NavigationLink in SwiftUI
     /// insted of appending to the paths.
@@ -509,5 +511,33 @@ public extension NavigationModel {
         let vc = SFSafariViewController(url: url)
         vc.preferredControlTintColor = UIColor(named: "accent")
         splitVC?.present(vc, animated: true)
+    }
+}
+
+public extension NavigationModel {
+    func onTappedOnNotif(response: UNNotificationResponse) {
+        let userInfo = response.notification.request.content.userInfo
+        let threadIdString = userInfo["threadId"] as? String
+        let appState = AppState.shared
+        if let threadIdString = threadIdString, let threadId = Int(threadIdString) {
+            if appState.connectionStatus != .connected {
+                appState.$connectionStatus
+                    .sink { [weak self] newState in
+                        if newState == .connected {
+                            self?.openConversationOnNotification(threadId: threadId)
+                        }
+                    }
+                    .store(in: &cancellableSet)
+            } else {
+                openConversationOnNotification(threadId: threadId)
+            }
+        }
+    }
+    
+    private func openConversationOnNotification(threadId: Int) {
+        Task {
+            guard let thread = try? await GetThreadsReuqester().get(.init(threadIds: [threadId])).first else { return }
+            AppState.shared.objectsContainer.navVM.createAndAppend(conversation: thread)
+        }
     }
 }

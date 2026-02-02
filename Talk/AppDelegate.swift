@@ -91,6 +91,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
                 return []
             }
             
+            if AppState.shared.isInForeground { return [] } 
+            
             Messaging.messaging().appDidReceiveMessage(userInfo)
             
             // [START_EXCLUDE]
@@ -119,9 +121,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let message = "did receive notification: \(response.notification.request.content)"
         print(message)
-        AppState.shared.objectsContainer.appOverlayVM.toast(leadingView: nil, message: message, messageColor: .red)
         
         let userInfo = response.notification.request.content.userInfo
+        
+        AppState.shared.objectsContainer.navVM.onTappedOnNotif(response: response)
         
         // [START_EXCLUDE]
         // Print message ID.
