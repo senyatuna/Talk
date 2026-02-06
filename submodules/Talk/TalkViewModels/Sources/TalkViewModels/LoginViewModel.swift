@@ -116,6 +116,13 @@ public final class LoginViewModel: ObservableObject {
         }
     }
     
+    public func onVeriyBackTapped() {
+        cancelTimer()
+        state = .login
+        resetVerify()
+        path.removeLast()
+    }
+    
     private func makeAuthorizeRequest(keyId: String) -> URLRequest {
         let address = getURLString(path: AppState.shared.spec.paths.talkBack.authorize)
         var urlReq = URLRequest(url: URL(string: address)!)
@@ -216,6 +223,10 @@ public final class LoginViewModel: ObservableObject {
         keyId = nil
         isLoading = false
         showSuccessAnimation = false
+        resetVerify()
+    }
+    
+    private func resetVerify() {
         verifyCodes = ["", "", "", "", "", ""]
     }
 

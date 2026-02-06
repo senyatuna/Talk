@@ -50,8 +50,7 @@ struct VerifyContentView: View {
     private var btnBack: some View {
         HStack {
             Button {
-                viewModel.cancelTimer()
-                viewModel.path.removeLast()
+                viewModel.onVeriyBackTapped()
             } label: {
                 Image(systemName: direction == .rightToLeft ? "arrow.right" : "arrow.left")
                     .resizable()

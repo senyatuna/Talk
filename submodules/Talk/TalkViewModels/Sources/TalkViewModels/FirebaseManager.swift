@@ -15,8 +15,8 @@ import TalkModels
 public final class FirebaseManager: ObservableObject {
     public let session: URLSession
     public static let shared = FirebaseManager()
-    public static let FIREBASE_REGISTERATION_TOKEN = "FIREBASE_REGISTERATION_TOKEN"
-    public static let NOTIFICATION_REGISTRATION_RESULT = "NOTIFICATION_REGISTRAION_RESULT"
+    private static let FIREBASE_REGISTERATION_TOKEN = "FIREBASE_REGISTERATION_TOKEN"
+    private static let TOKEN_SYNCED = "TOKEN_SYNCED"
 
     private init(session: URLSession = .shared) {
         self.session = session
@@ -24,14 +24,14 @@ public final class FirebaseManager: ObservableObject {
     
     public func register() async {
         guard
-            FirebaseManager.getNotificationRegistrationResult() == false,
+            FirebaseManager.isTokenSynced() == false,
             let ssoToken = await TokenManager.shared.getSSOTokenFromUserDefaultsAsync(),
             let firebaseToken = FirebaseManager.getFirebaseToken(),
             let ssoIdString = AppState.shared.user?.ssoId,
             let deviceId = await getAsyncConfig(),
             let ssoId = Int(ssoIdString)
         else { return }
-        log("Send firebase token: \(firebaseToken)")
+        log("Trying to sync the firebase token: \(firebaseToken)")
         do {
             let urlReq = try makeRegistrationRequest(apiToken: ssoToken.accessToken ?? "",
                                                      firebaseToken: firebaseToken,
@@ -41,7 +41,7 @@ public final class FirebaseManager: ObservableObject {
             let (data, resp) = try await session.data(for: urlReq)
             if let httpResponse = resp as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 let decodedResponse = try JSONDecoder.instance.decode(NotificationRegisterResponse.self, from: data)
-                FirebaseManager.setNotificationRegistrationResult(value: true)
+                FirebaseManager.setTokenSynced(value: true)
                 log("Successfully registered with ssoId: \(ssoId)")
             } else {
                 let stringBody = String(data: data, encoding: .utf8)
@@ -89,12 +89,12 @@ public final class FirebaseManager: ObservableObject {
         return urlReq
     }
     
-    public static func getNotificationRegistrationResult() -> Bool {
-        return UserDefaults.standard.bool(forKey: NOTIFICATION_REGISTRATION_RESULT) == true
+    public static func isTokenSynced() -> Bool {
+        return UserDefaults.standard.bool(forKey: TOKEN_SYNCED)
     }
     
-    public static func setNotificationRegistrationResult(value: Bool) {
-        return UserDefaults.standard.set(value, forKey: NOTIFICATION_REGISTRATION_RESULT)
+    public static func setTokenSynced(value: Bool) {
+        return UserDefaults.standard.set(value, forKey: TOKEN_SYNCED)
     }
 
     public static func getFirebaseToken() -> String? {
@@ -103,11 +103,9 @@ public final class FirebaseManager: ObservableObject {
 
     public static func setFirebaseToken(token: String?) {
         if let token = token {
-            UserDefaults.standard.set(
-                token, forKey: FIREBASE_REGISTERATION_TOKEN)
+            UserDefaults.standard.set(token, forKey: FIREBASE_REGISTERATION_TOKEN)
         } else {
-            UserDefaults.standard.removeObject(
-                forKey: FIREBASE_REGISTERATION_TOKEN)
+            UserDefaults.standard.removeObject(forKey: FIREBASE_REGISTERATION_TOKEN)
         }
         log("Firebase token is: \(token ?? "")")
     }

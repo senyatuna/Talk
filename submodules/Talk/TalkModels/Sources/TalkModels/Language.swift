@@ -73,6 +73,10 @@ public struct Language: Identifiable, Sendable {
         if language.language != Locale.preferredLanguages[0] {
             UserDefaults.standard.set([language.identifier], forKey: "AppleLanguages")
             UserDefaults.standard.synchronize()
+            
+            let groupName = "group.com.lmlvrmedia.leitnerbox"
+            let groupUserDefaults = UserDefaults(suiteName: groupName)
+            groupUserDefaults?.set(language.identifier, forKey: "AppleLanguages")
         }
         
         rootBundle = bundle
