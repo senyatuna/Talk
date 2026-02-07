@@ -111,4 +111,12 @@ public struct Constants: Sendable {
     /// Server Name sandbox
     /// chat-server
     nonisolated(unsafe) public static let serverNameSandbox = "Y2hhdC1zZXJ2ZXI="
+    
+    /// Notification Server subscribe main
+    /// https://api.pod.ir/srv/notification/push/device/subscribe
+    nonisolated(unsafe) public static let subsribeNotificationMain = "aHR0cHM6Ly9hcGkucG9kLmlyL3Nydi9ub3RpZmljYXRpb24vcHVzaC9kZXZpY2Uvc3Vic2NyaWJl"
+    
+    /// Notification Server subscribe sandbox
+    /// https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe
+    nonisolated(unsafe) public static let subsribeNotificationSandbox = "aHR0cHM6Ly9hcGkuc2FuZHBvZC5pci9zcnYvbm90aWYtc2FuZGJveC9wdXNoL2RldmljZS9zdWJzY3JpYmU="
 }

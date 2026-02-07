@@ -67,12 +67,8 @@ public final class FirebaseManager: ObservableObject {
         throws -> URLRequest
     {
         let spec = AppState.shared.spec
-        /// Sandbox
-         let address = "https://api.sandpod.ir/srv/notif-sandbox/push/device/subscribe"
-        
-        /// Production
-//        let address = "https://api.pod.ir/srv/notification/push/device/subscribe"
-        
+        let isSandbox = SpecManagerViewModel.shared.isSandbox()
+        let address = isSandbox ? Constants.subsribeNotificationSandbox.fromBase64() ?? "" : Constants.subsribeNotificationMain.fromBase64() ?? ""
         let clientId = spec.paths.sso.clientId
         let req = NotificationRegisterationRequest(
             registrationToken: firebaseToken,
