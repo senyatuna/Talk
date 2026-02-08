@@ -58,6 +58,7 @@ struct LogoutDialogView: View {
 
     private func onLogoutTapped() async {
         container.appOverlayVM.dialogView = nil
+        await FirebaseManager.shared.unsubscribe()
         Task { @ChatGlobalActor in
             ChatManager.activeInstance?.user.logOut()
         }

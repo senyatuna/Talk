@@ -17,7 +17,7 @@ public struct NotificationRegisterationRequest: Encodable {
     let packageName: String
 
     public init(
-        isSubscriptionRequest: Bool = true,
+        isSubscriptionRequest: Bool,
         registrationToken: String,
         appId: String,
         platform: String = "IOS",

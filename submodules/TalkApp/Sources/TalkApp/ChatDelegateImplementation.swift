@@ -218,6 +218,7 @@ public final class ChatDelegateImplementation: ChatDelegate {
     
     public func logout() async {
         AppState.shared.setUser(nil)
+        await FirebaseManager.shared.unsubscribe()
         Task { @ChatGlobalActor in
             ChatManager.activeInstance?.user.logOut()
         }
