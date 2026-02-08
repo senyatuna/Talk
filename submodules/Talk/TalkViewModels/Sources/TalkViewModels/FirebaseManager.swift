@@ -22,7 +22,7 @@ public final class FirebaseManager: ObservableObject {
         self.session = session
     }
     
-    public func register() async {
+    public func subscribe() async {
         guard
             FirebaseManager.isTokenSynced() == false,
             let ssoToken = await TokenManager.shared.getSSOTokenFromUserDefaultsAsync(),
@@ -42,15 +42,15 @@ public final class FirebaseManager: ObservableObject {
             if let httpResponse = resp as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 let decodedResponse = try JSONDecoder.instance.decode(NotificationRegisterResponse.self, from: data)
                 FirebaseManager.setTokenSynced(value: true)
-                log("Successfully registered with ssoId: \(ssoId)")
+                log("Successfully subscribed with ssoId: \(ssoId)")
             } else {
                 let stringBody = String(data: data, encoding: .utf8)
-                log("Failed to register with ssoId: \(ssoId) stringBody: \(stringBody)")
+                log("Failed to subscribe with ssoId: \(ssoId) stringBody: \(stringBody)")
             }
             let log = Logger.makeLog(prefix: "TALK_REGISTER_TOKEN:", request: urlReq, response: (data, resp))
             self.log(log)
         } catch {
-            log("Error on registering firebase token wiht the notification server with error: \(error.localizedDescription)")
+            log("Error on subscribing to the the notification server with error: \(error.localizedDescription)")
         }
     }
     

@@ -163,7 +163,7 @@ public final class ChatDelegateImplementation: ChatDelegate {
                 UserConfigManagerVM.instance.onUser(user)
                 AppState.shared.setUser(user)
                 Task {
-                    await FirebaseManager.shared.register()
+                    await FirebaseManager.shared.subscribe()
                 }
             }
         default:

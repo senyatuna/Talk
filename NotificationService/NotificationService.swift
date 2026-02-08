@@ -44,6 +44,9 @@ extension NotificationService {
         guard let content = mutableContent else { return }
         content.title = isGroup ? threadName ?? "" : title ?? ""
         content.threadIdentifier = "threadId-\(threadId)"
+        if let groupIconAttachment = groupIconAttachment {
+            content.attachments = [groupIconAttachment]
+        }
         contentHandler?(content)
     }
     
@@ -66,7 +69,10 @@ extension NotificationService {
         content.subtitle = repliedToString() ?? ""
         content.body = makeReplyBody() ?? ""
         content.threadIdentifier = "threadId-\(threadId)"
-        content.attachments = []
+        
+        if let groupIconAttachment = groupIconAttachment {
+            content.attachments = [groupIconAttachment]
+        }
         contentHandler?(content)
     }
 }
@@ -104,7 +110,7 @@ extension NotificationService {
     
     private func titleWithGroupIconIfIsGroup() -> String {
         let title = stringValue(forKey: "title") ?? ""
-        return isGroup ? "\(title) 􀉬" : title
+        return isGroup ? "\(title)" : title
     }
     
     private func isReactionType() -> Bool {
@@ -131,6 +137,15 @@ extension NotificationService {
         let lastName = stringValue(forKey: "repliedToMessageSenderLastname")
         guard let firstName = firstName, let lastName = lastName else { return nil }
         return "\(firstName) \(lastName)"
+    }
+    
+    private var groupIconAttachment: UNNotificationAttachment? {
+        guard
+            isGroup,
+            let groupIconURL: URL = Bundle.main.url(forResource: "ic_group", withExtension: "png"),
+            let attachment = try? UNNotificationAttachment(identifier: "groupIcon", url: groupIconURL, options: nil)
+        else { return nil }
+        return attachment
     }
     
     private var mutableContent: UNMutableNotificationContent? {
@@ -168,7 +183,7 @@ extension NotificationService {
     private var isRTL: Bool {
         let groupName = "group.com.lmlvrmedia.leitnerbox"
         let groupUserDefaults = UserDefaults(suiteName: groupName)
-        let identifier = groupUserDefaults?.string(forKey: "AppleLanguages")
-        return identifier == "ZmFfSVI="
+        let defaultLanguage = groupUserDefaults?.string(forKey: "DefaultGroupLanguage")
+        return defaultLanguage == "ZmFfSVI=".fromBase64() ?? ""
     }
 }

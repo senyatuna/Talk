@@ -73,11 +73,9 @@ public struct Language: Identifiable, Sendable {
         if language.language != Locale.preferredLanguages[0] {
             UserDefaults.standard.set([language.identifier], forKey: "AppleLanguages")
             UserDefaults.standard.synchronize()
-            
-            let groupName = "group.com.lmlvrmedia.leitnerbox"
-            let groupUserDefaults = UserDefaults(suiteName: groupName)
-            groupUserDefaults?.set(language.identifier, forKey: "AppleLanguages")
         }
+        
+        setDefaultGroupLanguage(identifier: language.identifier)
         
         rootBundle = bundle
         
@@ -90,6 +88,13 @@ public struct Language: Identifiable, Sendable {
         
         let preferedLocale = Locale(identifier: language.identifier ?? "en_US")
         cachedPreferedLocale = preferedLocale
+    }
+    
+    private static func setDefaultGroupLanguage(identifier: String) {
+        if identifier.isEmpty { return }
+        let groupName = "group.com.lmlvrmedia.leitnerbox"
+        let groupUserDefaults = UserDefaults(suiteName: groupName)
+        groupUserDefaults?.set(identifier, forKey: "DefaultGroupLanguage")
     }
     
     /// root bundle is the main folder of MyBundle.bundle,
