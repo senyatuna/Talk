@@ -126,6 +126,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         
         AppState.shared.objectsContainer.navVM.onTappedOnNotif(response: response)
         
+        /// Remove all notifications from the user notification center after the user clicked on in.
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        
         // [START_EXCLUDE]
         // Print message ID.
         if let messageID = userInfo[gcmMessageIDKey] {
