@@ -23,6 +23,8 @@ class NotificationService: UNNotificationServiceExtension {
             handleReaction()
         } else if isReply() {
             handleReply()
+        } else if isEditMessage() {
+            Task { await handleEditMessage() }
         } else {
             handleNormalMessage()
         }
@@ -75,6 +77,26 @@ extension NotificationService {
         }
         contentHandler?(content)
     }
+    
+    private func handleEditMessage() async {
+        let currentRequestMessageId = requestMessageId(request)
+        let notifs = await UNUserNotificationCenter.current().deliveredNotifications()
+        let notif = notifs.first(where: { requestMessageId($0.request) == currentRequestMessageId })
+        if let request = notif?.request {
+            /// Remove current delivered notification
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [request.identifier])
+            
+            /// Add new notification
+            if let newContent = mutableContent {
+                newContent.title = isGroup ? threadName ?? "" : title ?? ""
+                newContent.subtitle = isRTL ? editedFA : editedEN
+                newContent.threadIdentifier = "threadId-\(threadId)"
+                contentHandler?(newContent)
+            } else {
+                contentHandler?(request.content)
+            }
+        }
+    }
 }
 
 /// Helpers
@@ -120,6 +142,16 @@ extension NotificationService {
     
     private func isReply() -> Bool {
         return intValue(forKey: "repliedToMessageMsgId") != nil
+    }
+    
+    private func isEditMessage() -> Bool {
+        let type = request?.content.userInfo["requestType"] as? String ?? ""
+        return type == "editMessage"
+    }
+    
+    private func requestMessageId(_ request: UNNotificationRequest?) -> Int? {
+        guard let msgId = request?.content.userInfo["msgId"] as? String else { return nil }
+        return Int(msgId)
     }
     
     private func repliedToString() -> String? {
@@ -179,6 +211,8 @@ extension NotificationService {
     private var repliedToNameFA: String { "2b7Yp9iz2K4g2KjZhzog".fromBase64() ?? "" }
     private var youEN: String { "you" }
     private var youFA: String { "2LTZhdin".fromBase64() ?? "" }
+    private var editedEN: String { "(Edited ✏️)" }
+    private var editedFA: String { "KNin2LXZhNin2K0g2LTYr+Kcj++4jyk=".fromBase64() ?? "" }
     
     private var isRTL: Bool {
         let groupName = "group.com.lmlvrmedia.leitnerbox"
