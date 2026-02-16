@@ -22,12 +22,14 @@ class NotificationService: UNNotificationServiceExtension {
         let wrapper = NotificationRequestWrapper(request: request)
         self.wrapper = wrapper
         
-        if wrapper.isReactionType() {
+        if wrapper.requestType() == .reaction {
             handleReaction()
         } else if wrapper.isReply() {
             handleReply()
-        } else if wrapper.isEditMessage() {
+        } else if wrapper.requestType() == .editMessage {
             Task { await handleEditMessage() }
+        } else if wrapper.requestType() == .seeMessage {
+            handleSeeMessage()
         } else {
             handleNormalMessage()
         }
@@ -79,6 +81,16 @@ extension NotificationService {
             content.attachments = [groupIconAttachment]
         }
         contentHandler?(content)
+    }
+    
+    private func handleSeeMessage() {
+        guard let id = request?.identifier, let content = wrapper?.mutableContent else { return }
+        content.sound = nil
+        contentHandler?(content)
+        Task {
+            try? await Task.sleep(for: .seconds(0.03))
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
+        }
     }
     
     private func handleEditMessage() async {

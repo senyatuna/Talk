@@ -51,18 +51,13 @@ extension NotificationRequestWrapper {
         return isGroup ? "\(title)" : title
     }
     
-    func isReactionType() -> Bool {
-        let type = request.content.userInfo["requestType"] as? String ?? ""
-        return type == "reaction"
-    }
-    
     func isReply() -> Bool {
         return intValue(forKey: "repliedToMessageMsgId") != nil
     }
     
-    func isEditMessage() -> Bool {
+    func requestType() -> RequestType {
         let type = request.content.userInfo["requestType"] as? String ?? ""
-        return type == "editMessage"
+        return RequestType(rawValue: type) ?? .none
     }
     
     func requestMessageId(_ request: UNNotificationRequest?) -> Int? {
@@ -135,4 +130,12 @@ extension NotificationRequestWrapper {
         let defaultLanguage = groupUserDefaults?.string(forKey: "DefaultGroupLanguage")
         return defaultLanguage == "ZmFfSVI=".fromBase64() ?? ""
     }
+}
+
+enum RequestType: String {
+    case sendMessage = "sendMessage"
+    case editMessage = "editMessage"
+    case seeMessage = "seeMessage"
+    case reaction = "reaction"
+    case none
 }
