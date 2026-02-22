@@ -84,21 +84,25 @@ extension NotificationService {
     }
     
     private func handleSeeMessage() {
-        guard let id = request?.identifier, let content = wrapper?.mutableContent else { return }
+        guard let wrapper = wrapper, let id = request?.identifier, let content = wrapper.mutableContent else { return }
+        let messageId = wrapper.messageId
         content.sound = nil
         contentHandler?(content)
         Task {
             try? await Task.sleep(for: .seconds(0.03))
             UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
+            
+            /// Remove the seen message on other devices.
+            if let request = await UNUserNotificationCenter.findNotif(messageId: messageId)?.request {
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [request.identifier])
+            }
         }
     }
     
     private func handleEditMessage() async {
         guard let wrapper = wrapper else { return }
-        let currentRequestMessageId = wrapper.requestMessageId(request)
-        let notifs = await UNUserNotificationCenter.current().deliveredNotifications()
-        let notif = notifs.first(where: { wrapper.requestMessageId($0.request) == currentRequestMessageId })
-        if let request = notif?.request {
+        let messageId = wrapper.messageId
+        if let request = await UNUserNotificationCenter.findNotif(messageId: messageId)?.request {
             /// Remove current delivered notification
             UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [request.identifier])
             
